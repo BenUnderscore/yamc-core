@@ -1,29 +1,28 @@
-
-use glutin::event::{Event, WindowEvent};
-use glutin::event_loop::ControlFlow;
+//Uses
 use glutin;
+use std::sync::mpsc;
+use std::thread;
 
-//Module definitions
-mod render;
+//Modules
+mod event_loop;
 
 fn main() {
-    let mut events_loop = glutin::event_loop::EventLoop::new();
-    let wb = glutin::window::WindowBuilder::new()
-        .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0))
-        .with_title("Hello world");
-    let ctx = glutin::ContextBuilder::new().build_windowed(wb, &events_loop).unwrap();
-    
-    events_loop.run(
-        |ev, _target, control_flow| {
-            match ev
-            {
-                Event::WindowEvent { window_id, event } =>
-                    match event {
-                        WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                        _ => (),
-                    },
-                _ => (),
-            };
-        }
-    );
+    let (proxy_tx, proxy_rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        let proxy = proxy_rx.recv().unwrap();
+        run(proxy);
+    });
+
+    event_loop::run_event_loop(proxy_tx);
+}
+
+fn run(event_loop_proxy: event_loop::EventLoopProxy) {
+    let window_builder = glutin::window::WindowBuilder::new()
+        .with_title("Yet Another (Crappy) Minecraft Clone")
+        .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
+
+    event_loop_proxy
+        .create_windowed_context(window_builder)
+        .unwrap();
 }
