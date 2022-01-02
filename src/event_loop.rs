@@ -17,6 +17,7 @@ enum EventLoopEvent {
     RegisterDeviceEventSender {
         sender: Option<mpsc::Sender<DeviceEvent>>,
     },
+    Exit,
 }
 
 type Result<T> = std::result::Result<T, EventLoopError>;
@@ -47,12 +48,13 @@ impl EventLoopProxy {
         rx.recv().unwrap()
     }
 
-    pub fn register_device_event_sender(
-        &self,
-        tx: Option<mpsc::Sender<DeviceEvent>>,
-    ) {
+    pub fn register_device_event_sender(&self, tx: Option<mpsc::Sender<DeviceEvent>>) {
         let event = EventLoopEvent::RegisterDeviceEventSender { sender: tx };
         self.el_proxy.send_event(event).unwrap();
+    }
+
+    pub fn exit(&self) {
+        self.el_proxy.send_event(EventLoopEvent::Exit).unwrap();
     }
 }
 
@@ -79,20 +81,16 @@ pub fn run_event_loop(proxy_tx: mpsc::Sender<EventLoopProxy>) -> ! {
         device_event_sender: None,
     };
 
+    let mut is_control_flow_initialized = false;
     event_loop.run(move |ev, target, control_flow| {
+        if !is_control_flow_initialized {
+            *control_flow = ControlFlow::Wait;
+            is_control_flow_initialized = true;
+        }
+
         match ev {
-            Event::WindowEvent {
-                window_id: _,
-                event,
-            } => match event {
-                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                _ => (),
-            },
             Event::UserEvent(user_ev) => handle_event(&mut ctx, user_ev, target, control_flow),
-            Event::DeviceEvent {
-                device_id,
-                event,
-            } => {
+            Event::DeviceEvent { device_id, event } => {
                 if let Some(tx) = &ctx.device_event_sender {
                     tx.send(DeviceEvent { device_id, event }).unwrap();
                 }
@@ -106,7 +104,7 @@ fn handle_event(
     ctx: &mut EventLoopContext,
     user_ev: EventLoopEvent,
     target: &EventLoopWindowTarget<EventLoopEvent>,
-    _control_flow: &mut ControlFlow,
+    control_flow: &mut ControlFlow,
 ) {
     match user_ev {
         EventLoopEvent::CreateWindowedContext {
@@ -135,5 +133,6 @@ fn handle_event(
         EventLoopEvent::RegisterDeviceEventSender { sender } => {
             ctx.device_event_sender = sender;
         }
+        EventLoopEvent::Exit => *control_flow = ControlFlow::Exit,
     }
 }
