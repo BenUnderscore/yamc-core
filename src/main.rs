@@ -6,6 +6,8 @@ use std::time;
 
 //Modules
 mod event_loop;
+mod render;
+mod res;
 
 fn main() {
     let (proxy_tx, proxy_rx) = mpsc::channel();
@@ -25,6 +27,13 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
         rx
     };
 
+    let mut resource_system = res::ResourceSystem::new(std::path::Path::new("./res/").to_owned());
+    let test_resource = resource_system
+        .get_loaded_resource("test.txt", res::ResourceLoadType::PlainText)
+        .unwrap();
+
+    println!("{:?}", test_resource.data);
+
     {
         let window_builder = glutin::window::WindowBuilder::new()
             .with_title("Yet Another (Crappy) Minecraft Clone")
@@ -33,6 +42,8 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
         let ctx = event_loop_proxy
             .create_windowed_context(window_builder)
             .unwrap();
+
+        let render_state = render::RenderState::init(ctx);
 
         //The game loop
         let mut duration_behind: time::Duration = Default::default();
