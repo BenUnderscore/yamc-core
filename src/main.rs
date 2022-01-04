@@ -27,12 +27,7 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
         rx
     };
 
-    let mut resource_system = res::ResourceSystem::new(std::path::Path::new("./res/").to_owned());
-    let test_resource = resource_system
-        .get_loaded_resource("test.txt", res::ResourceLoadType::PlainText)
-        .unwrap();
-
-    println!("{:?}", test_resource.data);
+    let mut resource_system = res::ResourceSystem::new(std::path::PathBuf::from("./res/"));
 
     {
         let window_builder = glutin::window::WindowBuilder::new()
@@ -43,7 +38,7 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
             .create_windowed_context(window_builder)
             .unwrap();
 
-        let render_state = render::RenderState::init(ctx);
+        let render_state = render::RenderState::init(ctx, &mut resource_system);
 
         //The game loop
         let mut duration_behind: time::Duration = Default::default();
@@ -64,6 +59,8 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
                     _ => (),
                 }
             }
+
+            render_state.render();
 
             let new_instant = time::Instant::now();
             duration_behind += new_instant - last_instant;
