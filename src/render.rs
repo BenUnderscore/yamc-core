@@ -1,27 +1,54 @@
 //Uses
-use crate::res::ResourceSystem;
-
+use crate::res::{LoadedResourceData, ResourceLoadType, ResourceSystem};
 use gl::types::*;
 use glutin;
+use std::ptr;
 
-pub struct RenderState {
+pub struct Renderer {
     ctx: glutin::RawContext<glutin::PossiblyCurrent>,
-    vertex_shader: Option<GLuint>,
-    fragment_shader: Option<GLuint>,
-    shader_program: Option<GLuint>,
+    vertex_shader: GLuint,
+    fragment_shader: GLuint,
+    shader_program: GLuint,
 }
 
-impl RenderState {
-    pub fn init(ctx: glutin::RawContext<glutin::NotCurrent>, resources: &mut ResourceSystem) -> RenderState {
+impl Renderer {
+    pub fn init(
+        ctx: glutin::RawContext<glutin::NotCurrent>,
+        resources: &mut ResourceSystem,
+    ) -> Renderer {
         let current_ctx = unsafe { ctx.make_current().unwrap() };
 
         gl::load_with(|s| current_ctx.get_proc_address(s));
 
-        RenderState {
-            ctx: current_ctx,
-            vertex_shader: None,
-            fragment_shader: None,
-            shader_program: None,
+        unsafe {
+            let vs_source_res = resources
+                .get_loaded_resource("shaders/default.vs", ResourceLoadType::PlainText)
+                .unwrap();
+            let vs_shader_obj = match &vs_source_res.data {
+                LoadedResourceData::Text(source) => {
+                    create_shader_with_source(&source, gl::VERTEX_SHADER)
+                }
+                _ => panic!("Shader resource is of the wrong type!"),
+            };
+
+            let fs_source_res = resources
+                .get_loaded_resource("shaders/default.fs", ResourceLoadType::PlainText)
+                .unwrap();
+            let fs_shader_obj = match &fs_source_res.data {
+                LoadedResourceData::Text(source) => {
+                    create_shader_with_source(&source, gl::FRAGMENT_SHADER)
+                }
+                _ => panic!("Shader resource is of the wrong type!"),
+            };
+
+            let shader_program = compile_shaders_into_program(vs_shader_obj, fs_shader_obj);
+
+            Renderer {
+                ctx: current_ctx,
+                vertex_shader: vs_shader_obj,
+                fragment_shader: fs_shader_obj,
+                shader_program: shader_program,
+            }
         }
     }
 
@@ -37,4 +64,68 @@ impl RenderState {
 
         self.ctx.swap_buffers().unwrap();
     }
+}
+
+unsafe fn create_shader_with_source(source: &str, shader_type: GLenum) -> GLuint {
+    let shader_obj = gl::CreateShader(shader_type);
+    let src_ptr = source.as_ptr();
+    let src_byte_count = source.bytes().count() as GLint;
+    gl::ShaderSource(
+        shader_obj,
+        1,
+        ptr::addr_of!(src_ptr) as *const *const i8,
+        ptr::addr_of!(src_byte_count),
+    );
+
+    shader_obj
+}
+
+unsafe fn compile_shader_with_diagnostics(shader_obj: GLuint) {
+    gl::CompileShader(shader_obj);
+    let compile_status = {
+        let mut status: GLint = 0;
+        gl::GetShaderiv(shader_obj, gl::COMPILE_STATUS, ptr::addr_of_mut!(status));
+        status != 0
+    };
+
+    let info_log = {
+        let mut buf: Vec<u8> = vec![0; 1024];
+        let mut returned_length: GLsizei = 0;
+        gl::GetShaderInfoLog(
+            shader_obj,
+            buf.len() as GLsizei,
+            ptr::addr_of_mut!(returned_length),
+            buf.as_mut_ptr() as *mut i8,
+        );
+        String::from_utf8(buf[0..returned_length as usize].to_vec()).unwrap()
+    };
+
+    if info_log.trim().len() > 0 {
+        println!("Shader info log: \n{}", info_log);
+    }
+
+    if !compile_status {
+        panic!("Failed to compile shader!");
+    }
+}
+
+unsafe fn compile_shaders_into_program(vs: GLuint, fs: GLuint) -> GLuint {
+    let program_obj = gl::CreateProgram();
+    gl::AttachShader(program_obj, vs);
+    compile_shader_with_diagnostics(vs);
+    gl::AttachShader(program_obj, fs);
+    compile_shader_with_diagnostics(fs);
+
+    gl::LinkProgram(program_obj);
+    let link_status = {
+        let mut status: GLint = 0;
+        gl::GetProgramiv(program_obj, gl::LINK_STATUS, ptr::addr_of_mut!(status));
+        status != 0
+    };
+
+    if !link_status {
+        panic!("Shader program failed to link!");
+    }
+
+    program_obj
 }

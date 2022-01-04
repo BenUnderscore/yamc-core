@@ -44,7 +44,7 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
             .create_windowed_context(window_builder)
             .unwrap();
 
-        let render_state = render::RenderState::init(ctx, &mut resource_system);
+        let renderer = render::Renderer::init(ctx, &mut resource_system);
 
         //The game loop
         let mut duration_behind: time::Duration = Default::default();
@@ -72,7 +72,7 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
                 }
             }
 
-            render_state.render();
+            renderer.render();
 
             let new_instant = time::Instant::now();
             duration_behind += new_instant - last_instant;

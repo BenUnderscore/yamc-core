@@ -108,16 +108,17 @@ pub fn run_event_loop(proxy_tx: mpsc::Sender<EventLoopProxy>) -> ! {
                 if let Some(tx) = &ctx.device_event_sender {
                     tx.send(DeviceEvent { device_id, event }).unwrap();
                 }
-            },
-            Event::WindowEvent { window_id: _, event } => {
-                match event {
-                    glutin::event::WindowEvent::CloseRequested => {
-                        if let Some(tx) = &ctx.window_event_sender {
-                            tx.send(WindowEvent::CloseRequested).unwrap();
-                        }
-                    },
-                    _ => (),
+            }
+            Event::WindowEvent {
+                window_id: _,
+                event,
+            } => match event {
+                glutin::event::WindowEvent::CloseRequested => {
+                    if let Some(tx) = &ctx.window_event_sender {
+                        tx.send(WindowEvent::CloseRequested).unwrap();
+                    }
                 }
+                _ => (),
             },
             _ => (),
         };
@@ -140,8 +141,9 @@ fn handle_event(
                     if let Some(_) = &ctx.main_window {
                         Err(EventLoopError::WindowExists)
                     } else {
-                        let windowed_context_result =
-                            ContextBuilder::new().build_windowed(builder, target);
+                        let windowed_context_result = ContextBuilder::new()
+                            .with_gl(glutin::GlRequest::Latest)
+                            .build_windowed(builder, target);
                         match windowed_context_result {
                             Err(e) => Err(EventLoopError::GlutinCreationError(e)),
                             Ok(windowed_context) => unsafe {
@@ -156,7 +158,7 @@ fn handle_event(
         }
         EventLoopEvent::RegisterDeviceEventSender { sender } => {
             ctx.device_event_sender = sender;
-        },
+        }
         EventLoopEvent::RegisterWindowEventSender { sender } => {
             ctx.window_event_sender = sender;
         }
