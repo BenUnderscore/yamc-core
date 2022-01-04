@@ -1,5 +1,5 @@
 //Uses
-use glutin::event::{Event, WindowEvent};
+use glutin::event::Event;
 use glutin::event_loop::ControlFlow;
 use glutin::event_loop::{EventLoop, EventLoopWindowTarget};
 use glutin::window::{Window, WindowBuilder};
@@ -16,6 +16,9 @@ enum EventLoopEvent {
     },
     RegisterDeviceEventSender {
         sender: Option<mpsc::Sender<DeviceEvent>>,
+    },
+    RegisterWindowEventSender {
+        sender: Option<mpsc::Sender<WindowEvent>>,
     },
     Exit,
 }
@@ -53,6 +56,11 @@ impl EventLoopProxy {
         self.el_proxy.send_event(event).unwrap();
     }
 
+    pub fn register_window_event_sender(&self, tx: Option<mpsc::Sender<WindowEvent>>) {
+        let event = EventLoopEvent::RegisterWindowEventSender { sender: tx };
+        self.el_proxy.send_event(event).unwrap();
+    }
+
     pub fn exit(&self) {
         self.el_proxy.send_event(EventLoopEvent::Exit).unwrap();
     }
@@ -63,10 +71,15 @@ pub struct DeviceEvent {
     pub event: glutin::event::DeviceEvent,
 }
 
+pub enum WindowEvent {
+    CloseRequested,
+}
+
 //EVENT LOOP DEFINITION
 struct EventLoopContext {
     main_window: Option<Window>,
     device_event_sender: Option<mpsc::Sender<DeviceEvent>>,
+    window_event_sender: Option<mpsc::Sender<WindowEvent>>,
 }
 
 //Hijacks the calling thread (must be the main thread)
@@ -79,6 +92,7 @@ pub fn run_event_loop(proxy_tx: mpsc::Sender<EventLoopProxy>) -> ! {
     let mut ctx = EventLoopContext {
         main_window: None,
         device_event_sender: None,
+        window_event_sender: None,
     };
 
     let mut is_control_flow_initialized = false;
@@ -94,7 +108,17 @@ pub fn run_event_loop(proxy_tx: mpsc::Sender<EventLoopProxy>) -> ! {
                 if let Some(tx) = &ctx.device_event_sender {
                     tx.send(DeviceEvent { device_id, event }).unwrap();
                 }
-            }
+            },
+            Event::WindowEvent { window_id: _, event } => {
+                match event {
+                    glutin::event::WindowEvent::CloseRequested => {
+                        if let Some(tx) = &ctx.window_event_sender {
+                            tx.send(WindowEvent::CloseRequested).unwrap();
+                        }
+                    },
+                    _ => (),
+                }
+            },
             _ => (),
         };
     });
@@ -132,6 +156,9 @@ fn handle_event(
         }
         EventLoopEvent::RegisterDeviceEventSender { sender } => {
             ctx.device_event_sender = sender;
+        },
+        EventLoopEvent::RegisterWindowEventSender { sender } => {
+            ctx.window_event_sender = sender;
         }
         EventLoopEvent::Exit => *control_flow = ControlFlow::Exit,
     }

@@ -27,6 +27,12 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
         rx
     };
 
+    let window_event_rx = {
+        let (tx, rx) = mpsc::channel();
+        event_loop_proxy.register_window_event_sender(Some(tx));
+        rx
+    };
+
     let mut resource_system = res::ResourceSystem::new(std::path::PathBuf::from("./res/"));
 
     {
@@ -57,6 +63,12 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
                         }
                     }
                     _ => (),
+                }
+            }
+
+            for ev in window_event_rx.try_iter() {
+                match ev {
+                    event_loop::WindowEvent::CloseRequested => should_end = true,
                 }
             }
 
