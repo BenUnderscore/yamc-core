@@ -1,18 +1,22 @@
 //Uses
-use glutin::event::Event;
-use glutin::event_loop::ControlFlow;
-use glutin::event_loop::{EventLoop, EventLoopWindowTarget};
-use glutin::window::{Window, WindowBuilder};
-use glutin::{ContextBuilder, NotCurrent, RawContext};
 use std::sync::mpsc;
 use thiserror::Error;
+use wgpu;
+use winit::event::Event;
+use winit::event_loop::ControlFlow;
+use winit::event_loop::{EventLoop, EventLoopWindowTarget};
+use winit::window::{Window, WindowBuilder};
 
 //WINDOW MANAGER EVENT DEFINITION
 #[derive(Debug)]
 enum EventLoopEvent {
-    CreateWindowedContext {
+    CreateWindow {
         builder: WindowBuilder,
-        response_tx: mpsc::Sender<Result<RawContext<NotCurrent>>>,
+        response_tx: mpsc::Sender<Result<()>>,
+    },
+    CreateWgpuSurface {
+        instance: wgpu::Instance,
+        response_tx: mpsc::Sender<(wgpu::Instance, Result<wgpu::Surface>)>,
     },
     RegisterDeviceEventSender {
         sender: Option<mpsc::Sender<DeviceEvent>>,
@@ -29,21 +33,36 @@ type Result<T> = std::result::Result<T, EventLoopError>;
 pub enum EventLoopError {
     #[error("A window was already created")]
     WindowExists,
+    #[error("No valid window exists to perform operation")]
+    WindowMissing,
     #[error(transparent)]
-    GlutinCreationError(#[from] glutin::CreationError),
+    WinitOsError(#[from] winit::error::OsError),
 }
 
 //EVENT LOOP PROXY DEFINITION
 pub struct EventLoopProxy {
-    el_proxy: glutin::event_loop::EventLoopProxy<EventLoopEvent>,
+    el_proxy: winit::event_loop::EventLoopProxy<EventLoopEvent>,
 }
 
 impl EventLoopProxy {
-    pub fn create_windowed_context(&self, wb: WindowBuilder) -> Result<RawContext<NotCurrent>> {
+    pub fn create_window(&self, wb: WindowBuilder) -> Result<()> {
         let (tx, rx) = mpsc::channel();
 
-        let event = EventLoopEvent::CreateWindowedContext {
+        let event = EventLoopEvent::CreateWindow {
             builder: wb,
+            response_tx: tx,
+        };
+        self.el_proxy.send_event(event).unwrap();
+
+        rx.recv().unwrap()
+    }
+
+    //Temporarily takes ownership of the passed instance in order to use it on another thread
+    pub fn create_wgpu_surface(&self, instance: wgpu::Instance) -> (wgpu::Instance, Result<wgpu::Surface>) {
+        let (tx, rx) = mpsc::channel();
+
+        let event = EventLoopEvent::CreateWgpuSurface {
+            instance,
             response_tx: tx,
         };
         self.el_proxy.send_event(event).unwrap();
@@ -67,8 +86,8 @@ impl EventLoopProxy {
 }
 
 pub struct DeviceEvent {
-    pub device_id: glutin::event::DeviceId,
-    pub event: glutin::event::DeviceEvent,
+    pub device_id: winit::event::DeviceId,
+    pub event: winit::event::DeviceEvent,
 }
 
 pub enum WindowEvent {
@@ -113,7 +132,7 @@ pub fn run_event_loop(proxy_tx: mpsc::Sender<EventLoopProxy>) -> ! {
                 window_id: _,
                 event,
             } => match event {
-                glutin::event::WindowEvent::CloseRequested => {
+                winit::event::WindowEvent::CloseRequested => {
                     if let Some(tx) = &ctx.window_event_sender {
                         tx.send(WindowEvent::CloseRequested).unwrap();
                     }
@@ -132,29 +151,24 @@ fn handle_event(
     control_flow: &mut ControlFlow,
 ) {
     match user_ev {
-        EventLoopEvent::CreateWindowedContext {
+        EventLoopEvent::CreateWindow {
             builder,
             response_tx,
         } => {
+            let window_result = builder.build(target);
+            response_tx.send(match window_result {
+                Ok(window) => {
+                    ctx.main_window = Some(window);
+                    Ok(())
+                }
+                Err(os_error) => Err(EventLoopError::WinitOsError(os_error)),
+            });
+        },
+        EventLoopEvent::CreateWgpuSurface {
+            instance,
             response_tx
-                .send({
-                    if let Some(_) = &ctx.main_window {
-                        Err(EventLoopError::WindowExists)
-                    } else {
-                        let windowed_context_result = ContextBuilder::new()
-                            .with_gl(glutin::GlRequest::Latest)
-                            .build_windowed(builder, target);
-                        match windowed_context_result {
-                            Err(e) => Err(EventLoopError::GlutinCreationError(e)),
-                            Ok(windowed_context) => unsafe {
-                                let (raw_ctx, window) = windowed_context.split();
-                                ctx.main_window = Some(window);
-                                Ok(raw_ctx)
-                            },
-                        }
-                    }
-                })
-                .unwrap();
+        } => {
+            
         }
         EventLoopEvent::RegisterDeviceEventSender { sender } => {
             ctx.device_event_sender = sender;

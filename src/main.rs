@@ -1,8 +1,9 @@
 //Uses
-use glutin;
+use simple_logger;
 use std::sync::mpsc;
 use std::thread;
 use std::time;
+use winit;
 
 //Modules
 mod event_loop;
@@ -10,6 +11,8 @@ mod render;
 mod res;
 
 fn main() {
+    simple_logger::SimpleLogger::new().init().unwrap();
+
     let (proxy_tx, proxy_rx) = mpsc::channel();
 
     thread::spawn(move || {
@@ -36,15 +39,15 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
     let mut resource_system = res::ResourceSystem::new(std::path::PathBuf::from("./res/"));
 
     {
-        let window_builder = glutin::window::WindowBuilder::new()
+        let window_builder = winit::window::WindowBuilder::new()
             .with_title("Yet Another (Crappy) Minecraft Clone")
-            .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
+            .with_inner_size(winit::dpi::LogicalSize::new(1024.0, 768.0));
 
         let ctx = event_loop_proxy
-            .create_windowed_context(window_builder)
+            .create_window(window_builder)
             .unwrap();
 
-        let renderer = render::Renderer::init(ctx, &mut resource_system);
+        let renderer = render::Renderer::init(event_loop_proxy);
 
         //The game loop
         let mut duration_behind: time::Duration = Default::default();
@@ -54,10 +57,10 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
         while !should_end {
             for ev in device_event_rx.try_iter() {
                 match ev.event {
-                    glutin::event::DeviceEvent::Key(input) => {
+                    winit::event::DeviceEvent::Key(input) => {
                         if let Some(key_code) = input.virtual_keycode {
                             match key_code {
-                                glutin::event::VirtualKeyCode::Escape => should_end = true,
+                                winit::event::VirtualKeyCode::Escape => should_end = true,
                                 _ => (),
                             }
                         }
