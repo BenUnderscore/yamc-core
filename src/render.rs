@@ -9,6 +9,8 @@ pub struct Renderer {
     vertex_shader: GLuint,
     fragment_shader: GLuint,
     shader_program: GLuint,
+    vbo: GLuint,
+    vao: GLuint,
 }
 
 impl Renderer {
@@ -22,7 +24,7 @@ impl Renderer {
 
         unsafe {
             let vs_source_res = resources
-                .get_loaded_resource("shaders/default.vs", ResourceLoadType::PlainText)
+                .get_loaded_resource("shaders/default-vert.glsl", ResourceLoadType::PlainText)
                 .unwrap();
             let vs_shader_obj = match &vs_source_res.data {
                 LoadedResourceData::Text(source) => {
@@ -32,7 +34,7 @@ impl Renderer {
             };
 
             let fs_source_res = resources
-                .get_loaded_resource("shaders/default.fs", ResourceLoadType::PlainText)
+                .get_loaded_resource("shaders/default-frag.glsl", ResourceLoadType::PlainText)
                 .unwrap();
             let fs_shader_obj = match &fs_source_res.data {
                 LoadedResourceData::Text(source) => {
@@ -43,11 +45,50 @@ impl Renderer {
 
             let shader_program = compile_shaders_into_program(vs_shader_obj, fs_shader_obj);
 
+            let vbo = {
+                let mut vbo = 0;
+                gl::GenBuffers(1, ptr::addr_of_mut!(vbo));
+                vbo
+            };
+
+            let vertices: Vec<f32> = vec![
+                -0.5, -0.5, 0.0,
+                0.0, 0.5, 0.0,
+                0.5, -0.5, 0.0
+            ];
+
+            gl::NamedBufferData(
+                vbo,
+                (vertices.len() * std::mem::size_of::<f32>()) as GLsizeiptr,
+                vertices.as_ptr() as *const std::ffi::c_void,
+                gl::STATIC_DRAW
+            );
+
+            let vao = {
+                let mut vao = 0;
+                gl::GenVertexArrays(1, ptr::addr_of_mut!(vao));
+                vao
+            };
+
+            gl::BindVertexArray(vao);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+            gl::EnableVertexAttribArray(0);
+            gl::VertexAttribPointer(
+                0,
+                3,
+                gl::FLOAT,
+                false as GLboolean,
+                0,
+                0 as *const std::ffi::c_void
+            );
+
             Renderer {
                 ctx: current_ctx,
                 vertex_shader: vs_shader_obj,
                 fragment_shader: fs_shader_obj,
-                shader_program: shader_program,
+                shader_program,
+                vbo,
+                vao
             }
         }
     }
@@ -60,6 +101,10 @@ impl Renderer {
         unsafe {
             gl::ClearColor(0.0, 0.0, 0.0, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
+
+            gl::UseProgram(self.shader_program);
+            gl::BindVertexArray(self.vao);
+            gl::DrawArrays(gl::TRIANGLES, 0, 3);
         }
 
         self.ctx.swap_buffers().unwrap();
