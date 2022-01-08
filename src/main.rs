@@ -43,11 +43,9 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
             .with_title("Yet Another (Crappy) Minecraft Clone")
             .with_inner_size(winit::dpi::LogicalSize::new(1024.0, 768.0));
 
-        let ctx = event_loop_proxy
-            .create_window(window_builder)
-            .unwrap();
+        let ctx = event_loop_proxy.create_window(window_builder).unwrap();
 
-        let renderer = render::Renderer::init(event_loop_proxy);
+        let mut renderer = render::Renderer::init(&event_loop_proxy);
 
         //The game loop
         let mut duration_behind: time::Duration = Default::default();

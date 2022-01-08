@@ -24,6 +24,9 @@ enum EventLoopEvent {
     RegisterWindowEventSender {
         sender: Option<mpsc::Sender<WindowEvent>>,
     },
+    GetWindowInnerSize {
+        response_tx: mpsc::Sender<Result<winit::dpi::PhysicalSize<u32>>>,
+    },
     Exit,
 }
 
@@ -58,7 +61,10 @@ impl EventLoopProxy {
     }
 
     //Temporarily takes ownership of the passed instance in order to use it on another thread
-    pub fn create_wgpu_surface(&self, instance: wgpu::Instance) -> (wgpu::Instance, Result<wgpu::Surface>) {
+    pub fn create_wgpu_surface(
+        &self,
+        instance: wgpu::Instance,
+    ) -> (wgpu::Instance, Result<wgpu::Surface>) {
         let (tx, rx) = mpsc::channel();
 
         let event = EventLoopEvent::CreateWgpuSurface {
@@ -78,6 +84,15 @@ impl EventLoopProxy {
     pub fn register_window_event_sender(&self, tx: Option<mpsc::Sender<WindowEvent>>) {
         let event = EventLoopEvent::RegisterWindowEventSender { sender: tx };
         self.el_proxy.send_event(event).unwrap();
+    }
+
+    pub fn get_window_inner_size(&self) -> Result<winit::dpi::PhysicalSize<u32>> {
+        let (tx, rx) = mpsc::channel();
+
+        let event = EventLoopEvent::GetWindowInnerSize { response_tx: tx };
+        self.el_proxy.send_event(event).unwrap();
+
+        rx.recv().unwrap()
     }
 
     pub fn exit(&self) {
@@ -162,19 +177,33 @@ fn handle_event(
                     Ok(())
                 }
                 Err(os_error) => Err(EventLoopError::WinitOsError(os_error)),
-            });
+            }).unwrap();
         },
         EventLoopEvent::CreateWgpuSurface {
             instance,
-            response_tx
+            response_tx,
         } => {
-            
-        }
+            response_tx
+                .send(match &ctx.main_window {
+                    Some(window) => unsafe {
+                        let surface = instance.create_surface(&window);
+                        (instance, Ok(surface))
+                    },
+                    None => (instance, Err(EventLoopError::WindowMissing)),
+                })
+                .unwrap();
+        },
         EventLoopEvent::RegisterDeviceEventSender { sender } => {
             ctx.device_event_sender = sender;
-        }
+        },
         EventLoopEvent::RegisterWindowEventSender { sender } => {
             ctx.window_event_sender = sender;
+        },
+        EventLoopEvent::GetWindowInnerSize { response_tx } => {
+            response_tx.send(match &ctx.main_window {
+                Some(window) => Ok(window.inner_size()),
+                None => Err(EventLoopError::WindowMissing),
+            }).unwrap();
         }
         EventLoopEvent::Exit => *control_flow = ControlFlow::Exit,
     }
