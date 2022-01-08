@@ -1,4 +1,5 @@
 //Uses
+use enum_as_inner::EnumAsInner;
 use std::collections::HashMap;
 use std::ffi::OsString;
 use std::path::PathBuf;
@@ -10,7 +11,7 @@ pub struct LoadedResource {
     pub data: LoadedResourceData,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, EnumAsInner)]
 pub enum LoadedResourceData {
     Text(String),
 }

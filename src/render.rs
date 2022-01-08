@@ -8,10 +8,11 @@ pub struct Renderer {
     device: wgpu::Device,
     queue: wgpu::Queue,
     surface: wgpu::Surface,
+    render_pipeline: wgpu::RenderPipeline,
 }
 
 impl Renderer {
-    pub fn init(event_loop_proxy: &EventLoopProxy) -> Renderer {
+    pub fn init(event_loop_proxy: &EventLoopProxy, res: &mut ResourceSystem) -> Renderer {
         let instance_tmp = wgpu::Instance::new(wgpu::Backends::all());
         let (instance, surface_result) = event_loop_proxy.create_wgpu_surface(instance_tmp);
         let surface = surface_result.unwrap();
@@ -42,11 +43,67 @@ impl Renderer {
             present_mode: wgpu::PresentMode::Fifo,
         };
         surface.configure(&device, &surface_config);
+        
+        let shader_source_res = res
+        .get_loaded_resource("shaders/default.wgsl", ResourceLoadType::PlainText)
+        .unwrap();
+        let shader_source = 
+            shader_source_res.data
+            .as_text()
+            .unwrap();
+
+        let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
+            label: Some("default"),
+            source: wgpu::ShaderSource::Wgsl(shader_source.into()),
+        });
+
+        let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Render pipeline layout"),
+                bind_group_layouts: &[],
+                push_constant_ranges: &[],
+            });
+
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Render pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: "vs_main",
+                buffers: &[],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: "fs_main",
+                targets: &[wgpu::ColorTargetState {
+                    format: surface_config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                }],
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState {
+                count: 1,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            multiview: None,
+        });
 
         Renderer {
             device,
             queue,
             surface,
+            render_pipeline,
         }
     }
 
@@ -63,7 +120,7 @@ impl Renderer {
             });
 
         {
-            let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Some pass"),
                 color_attachments: &[wgpu::RenderPassColorAttachment {
                     view: &view,
@@ -80,6 +137,9 @@ impl Renderer {
                 }],
                 depth_stencil_attachment: None,
             });
+
+            render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.draw(0..3, 0..1);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

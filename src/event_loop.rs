@@ -171,14 +171,16 @@ fn handle_event(
             response_tx,
         } => {
             let window_result = builder.build(target);
-            response_tx.send(match window_result {
-                Ok(window) => {
-                    ctx.main_window = Some(window);
-                    Ok(())
-                }
-                Err(os_error) => Err(EventLoopError::WinitOsError(os_error)),
-            }).unwrap();
-        },
+            response_tx
+                .send(match window_result {
+                    Ok(window) => {
+                        ctx.main_window = Some(window);
+                        Ok(())
+                    }
+                    Err(os_error) => Err(EventLoopError::WinitOsError(os_error)),
+                })
+                .unwrap();
+        }
         EventLoopEvent::CreateWgpuSurface {
             instance,
             response_tx,
@@ -192,18 +194,20 @@ fn handle_event(
                     None => (instance, Err(EventLoopError::WindowMissing)),
                 })
                 .unwrap();
-        },
+        }
         EventLoopEvent::RegisterDeviceEventSender { sender } => {
             ctx.device_event_sender = sender;
-        },
+        }
         EventLoopEvent::RegisterWindowEventSender { sender } => {
             ctx.window_event_sender = sender;
-        },
+        }
         EventLoopEvent::GetWindowInnerSize { response_tx } => {
-            response_tx.send(match &ctx.main_window {
-                Some(window) => Ok(window.inner_size()),
-                None => Err(EventLoopError::WindowMissing),
-            }).unwrap();
+            response_tx
+                .send(match &ctx.main_window {
+                    Some(window) => Ok(window.inner_size()),
+                    None => Err(EventLoopError::WindowMissing),
+                })
+                .unwrap();
         }
         EventLoopEvent::Exit => *control_flow = ControlFlow::Exit,
     }

@@ -1,5 +1,5 @@
 //Uses
-use simple_logger;
+use env_logger;
 use std::sync::mpsc;
 use std::thread;
 use std::time;
@@ -11,7 +11,7 @@ mod render;
 mod res;
 
 fn main() {
-    simple_logger::SimpleLogger::new().init().unwrap();
+    env_logger::init();
 
     let (proxy_tx, proxy_rx) = mpsc::channel();
 
@@ -43,9 +43,8 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
             .with_title("Yet Another (Crappy) Minecraft Clone")
             .with_inner_size(winit::dpi::LogicalSize::new(1024.0, 768.0));
 
-        let ctx = event_loop_proxy.create_window(window_builder).unwrap();
-
-        let mut renderer = render::Renderer::init(&event_loop_proxy);
+        event_loop_proxy.create_window(window_builder).unwrap();
+        let mut renderer = render::Renderer::init(&event_loop_proxy, &mut resource_system);
 
         //The game loop
         let mut duration_behind: time::Duration = Default::default();
