@@ -8,6 +8,7 @@ use winit;
 //Modules
 mod event_loop;
 mod render;
+mod world;
 mod res;
 
 fn main() {
@@ -41,7 +42,8 @@ fn run(event_loop_proxy: event_loop::EventLoopProxy) {
     {
         let window_builder = winit::window::WindowBuilder::new()
             .with_title("Yet Another (Crappy) Minecraft Clone")
-            .with_inner_size(winit::dpi::LogicalSize::new(1024.0, 768.0));
+            .with_inner_size(winit::dpi::LogicalSize::new(1024.0, 768.0))
+            .with_resizable(false);
 
         event_loop_proxy.create_window(window_builder).unwrap();
         let mut renderer = render::Renderer::init(&event_loop_proxy, &mut resource_system);
