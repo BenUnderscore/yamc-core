@@ -7,6 +7,8 @@ use winit::event_loop::ControlFlow;
 use winit::event_loop::{EventLoop, EventLoopWindowTarget};
 use winit::window::{Window, WindowBuilder};
 
+pub use winit as winit;
+
 //WINDOW MANAGER EVENT DEFINITION
 #[derive(Debug)]
 enum EventLoopEvent {
