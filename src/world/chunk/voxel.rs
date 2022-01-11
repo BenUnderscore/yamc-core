@@ -7,6 +7,7 @@
 //! Voxels can for example have attributes for appearance, hardness, mining drops, etc.
 
 use thiserror::Error;
+use std::collections::HashMap;
 
 #[derive(Error, Debug)]
 pub enum VoxelError {
@@ -14,6 +15,8 @@ pub enum VoxelError {
     AttributeAlreadyRegistered(u16),
     #[error("An attribute that has been requested is missing for ID {0}")]
     AttributeMissing(u16),
+    #[error("A name has already been registered with the ID {0}")]
+    NameAlreadyRegistered(u16),
 }
 
 /// One block in a chunk
@@ -31,6 +34,7 @@ impl Voxel {
     }
 }
 
+/// Stores one type of attribute for all registered voxel types in a cache-friendly way
 pub struct VoxelAttributeRegistry<A> {
     map: Vec<Option<A>>,
     label: String,
@@ -56,7 +60,7 @@ impl<A> VoxelAttributeRegistry<A> {
         }
     }
 
-    pub fn get(&self, id: u16) -> Result<&A, VoxelError> {
+    pub fn find(&self, id: u16) -> Result<&A, VoxelError> {
         if id as usize >= self.map.len() {
             return Err(VoxelError::AttributeMissing(id));
         }
@@ -64,5 +68,27 @@ impl<A> VoxelAttributeRegistry<A> {
             Some(attr) => Ok(attr),
             None => Err(VoxelError::AttributeMissing(id)),
         }
+    }
+}
+
+/// Allows for a reverse-lookup of strings to voxel IDs, useful for scripting convenience
+pub struct VoxelNameRegistry {
+    map: HashMap<String, u16>,
+}
+
+impl VoxelNameRegistry {
+    pub fn new() -> VoxelNameRegistry {
+        VoxelNameRegistry { map: HashMap::new() }
+    }
+
+    pub fn add(&mut self, name: &str, id: u16) -> Result<(), VoxelError> {
+        match self.map.insert(name.to_owned(), id) {
+            Some(id) => Err(VoxelError::AttributeAlreadyRegistered(id)),
+            None => Ok(()),
+        }
+    }
+
+    pub fn find(&self, name: &str) -> Option<u16> {
+        self.map.get(name).map(|id| *id)
     }
 }

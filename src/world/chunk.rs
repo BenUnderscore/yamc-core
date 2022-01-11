@@ -1,3 +1,3 @@
 
-mod voxel;
+pub mod voxel;
 
