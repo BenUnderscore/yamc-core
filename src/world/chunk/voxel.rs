@@ -72,6 +72,7 @@ impl<A> VoxelAttributeRegistry<A> {
 }
 
 /// Allows for a reverse-lookup of strings to voxel IDs, useful for scripting convenience
+/// and serialization consistency.
 pub struct VoxelNameRegistry {
     map: HashMap<String, u16>,
 }
@@ -83,7 +84,7 @@ impl VoxelNameRegistry {
 
     pub fn add(&mut self, name: &str, id: u16) -> Result<(), VoxelError> {
         match self.map.insert(name.to_owned(), id) {
-            Some(id) => Err(VoxelError::AttributeAlreadyRegistered(id)),
+            Some(id) => Err(VoxelError::NameAlreadyRegistered(id)),
             None => Ok(()),
         }
     }
