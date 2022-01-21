@@ -7,7 +7,7 @@ use winit::event_loop::ControlFlow;
 use winit::event_loop::{EventLoop, EventLoopWindowTarget};
 use winit::window::{Window, WindowBuilder};
 
-pub use winit as winit;
+pub use winit;
 
 //WINDOW MANAGER EVENT DEFINITION
 #[derive(Debug)]

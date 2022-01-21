@@ -43,14 +43,11 @@ impl Renderer {
             present_mode: wgpu::PresentMode::Fifo,
         };
         surface.configure(&device, &surface_config);
-        
+
         let shader_source_res = res
-        .get_loaded_resource("shaders/default.wgsl", ResourceLoadType::PlainText)
-        .unwrap();
-        let shader_source = 
-            shader_source_res.data
-            .as_text()
+            .get_loaded_resource("shaders/default.wgsl", ResourceLoadType::PlainText)
             .unwrap();
+        let shader_source = shader_source_res.data.as_text().unwrap();
 
         let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: Some("default"),

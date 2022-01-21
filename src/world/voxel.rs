@@ -1,13 +1,13 @@
 //! This module contains definitions for voxels and voxel-related structures
 //! The `Voxel` struct is meant to be the representation of a voxel in a grid
-//! 
+//!
 //! Voxels' behavior is defined through a collection of _attributes_.
 //! These are type objects that are stored in `VoxelAttributeRegistry` instances
 //! and can be looked up to determine the particular behavior of a voxel.
 //! Voxels can for example have attributes for appearance, hardness, mining drops, etc.
 
-use thiserror::Error;
 use std::collections::HashMap;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum VoxelError {
@@ -42,7 +42,10 @@ pub struct VoxelAttributeRegistry<A> {
 
 impl<A> VoxelAttributeRegistry<A> {
     pub fn new(attribute_label: &str) -> VoxelAttributeRegistry<A> {
-        VoxelAttributeRegistry { map: Vec::new(), label: attribute_label.to_owned() }
+        VoxelAttributeRegistry {
+            map: Vec::new(),
+            label: attribute_label.to_owned(),
+        }
     }
 
     pub fn get_label(&self) -> &str {
@@ -79,7 +82,9 @@ pub struct VoxelNameRegistry {
 
 impl VoxelNameRegistry {
     pub fn new() -> VoxelNameRegistry {
-        VoxelNameRegistry { map: HashMap::new() }
+        VoxelNameRegistry {
+            map: HashMap::new(),
+        }
     }
 
     pub fn add(&mut self, name: &str, id: u16) -> Result<(), VoxelError> {
