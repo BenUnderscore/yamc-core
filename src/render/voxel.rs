@@ -20,6 +20,5 @@ impl VoxelRenderer {
     pub fn init(appearance_registry: VoxelAttributeRegistry<VoxelAppearanceAttribute>) -> VoxelRenderer {
         VoxelRenderer { appearance_registry }
     }
-
     
 }
