@@ -19,6 +19,14 @@
 //! accessed with a dot operator every time.
 //! When there are multiple sets of coordinates passed to a function, it is okay to pass them as tuples
 //! and to call them `xyz_*`
+//!
+//! The 6 cardinal directions are referred to as such:
+//! - `X+` is _East_
+//! - `X-` is _West_
+//! - `Z+` is _North_
+//! - `Z-` is _South_
+//! - `Y-` is _Down_
+//! - `Y+` is _Up_
 
 //Uses
 use super::chunk;

@@ -1,7 +1,11 @@
+//Module definitions
+
 //Uses
 use crate::event_loop::EventLoopProxy;
 use crate::res::{LoadedResourceData, ResourceLoadType, ResourceSystem};
 use pollster::block_on;
+use wgpu::util::DeviceExt;
+use bytemuck;
 use wgpu;
 
 pub struct Renderer {
@@ -9,7 +13,42 @@ pub struct Renderer {
     queue: wgpu::Queue,
     surface: wgpu::Surface,
     render_pipeline: wgpu::RenderPipeline,
+    buffer: wgpu::Buffer,
 }
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+struct Vertex {
+    position: [f32; 3],
+    color: [f32; 3],
+}
+
+impl Vertex {
+    fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
+        wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &[
+                wgpu::VertexAttribute {
+                    offset: 0,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+                wgpu::VertexAttribute {
+                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x3,
+                }
+            ]
+        }
+    }
+}
+
+const VERTICES: &[Vertex] = &[
+    Vertex { position: [0.0, 0.5, 0.0], color: [1.0, 0.0, 0.0] },
+    Vertex { position: [-0.5, -0.5, 0.0], color: [0.0, 1.0, 0.0] },
+    Vertex { position: [0.5, -0.5, 0.0], color: [0.0, 0.0, 1.0] },
+];
 
 impl Renderer {
     pub fn init(event_loop_proxy: &EventLoopProxy, res: &mut ResourceSystem) -> Renderer {
@@ -60,6 +99,14 @@ impl Renderer {
                 bind_group_layouts: &[],
                 push_constant_ranges: &[],
             });
+        
+        let buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(VERTICES),
+                usage: wgpu::BufferUsages::VERTEX,
+            }
+        );
 
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Render pipeline"),
@@ -67,7 +114,9 @@ impl Renderer {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[],
+                buffers: &[
+                    Vertex::desc()
+                ],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -101,6 +150,7 @@ impl Renderer {
             queue,
             surface,
             render_pipeline,
+            buffer,
         }
     }
 
@@ -136,6 +186,7 @@ impl Renderer {
             });
 
             render_pass.set_pipeline(&self.render_pipeline);
+            render_pass.set_vertex_buffer(0, self.buffer.slice(..));
             render_pass.draw(0..3, 0..1);
         }
 

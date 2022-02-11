@@ -23,5 +23,8 @@ impl World {
         }
     }
 
-    //pub fn get_chunk_at_position()
+    pub fn get_chunk_at_position(&self, x_chunk: i32, y_chunk: i32, z_chunk: i32) -> &Chunk {
+        assert_eq!((x_chunk, y_chunk, z_chunk), (0, 0, 0));
+        &self.test_chunk
+    }
 }
