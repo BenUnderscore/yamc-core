@@ -1,38 +1,6 @@
-//! This module contains definitions for voxels and voxel-related structures
-//! The `Voxel` struct is meant to be the representation of a voxel in a grid
-//!
-//! Voxels' behavior is defined through a collection of _attributes_.
-//! These are type objects that are stored in `VoxelAttributeRegistry` instances
-//! and can be looked up to determine the particular behavior of a voxel.
-//! Voxels can for example have attributes for appearance, hardness, mining drops, etc.
-
+//Uses
+use super::VoxelError;
 use std::collections::HashMap;
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum VoxelError {
-    #[error("An attribute has already been registered for ID {0}")]
-    AttributeAlreadyRegistered(u16),
-    #[error("An attribute that has been requested is missing for ID {0}")]
-    AttributeMissing(u16),
-    #[error("A name has already been registered with the ID {0}")]
-    NameAlreadyRegistered(u16),
-}
-
-/// One block in a chunk
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub struct Voxel {
-    /// Represents the type of this voxel
-    pub id: u16,
-    /// Metadata associated with this voxel
-    pub data: u16,
-}
-
-impl Voxel {
-    pub fn id_eq(&self, other: &Voxel) -> bool {
-        self.id == other.id
-    }
-}
 
 /// Stores one type of attribute for all registered voxel types in a cache-friendly way
 pub struct VoxelAttributeRegistry<A> {

@@ -1,59 +1,33 @@
+//! Defines the basics of chunks and some utilities
+//!
+//! The primary type of this module is `ChunkArray`, which is an array
+//! that is designed to hold one object per chunk.
+
 //Uses
-use super::voxel::Voxel;
+use std::collections::BTreeMap;
 
-pub const CHUNK_SIZE_X: usize = 32;
-pub const CHUNK_SIZE_Y: usize = 32;
-pub const CHUNK_SIZE_Z: usize = 32;
+pub const CHUNK_SIZE_X: usize = 16;
+pub const CHUNK_SIZE_Y: usize = 16;
+pub const CHUNK_SIZE_Z: usize = 16;
 
-pub struct VoxelArray {
-    array: Box<[Voxel]>,
+pub struct ChunkArray<T> {
+    chunks: BTreeMap<(i32, i32, i32), T>,
 }
 
-impl VoxelArray {
-    pub fn new(default_voxel: Voxel) -> VoxelArray {
-        VoxelArray {
-            array: vec![default_voxel; CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z]
-                .into_boxed_slice(),
-        }
+impl<T> ChunkArray<T> {
+    pub fn new() -> ChunkArray<T> {
+        ChunkArray { chunks: BTreeMap::new() }
     }
 
-    pub fn get_voxel_at_position(&self, x: usize, y: usize, z: usize) -> &Voxel {
-        &self.array[VoxelArray::get_voxel_index(x, y, z)]
+    pub fn get(&self, x: i32, y: i32, z: i32) -> Option<&T> {
+        self.chunks.get(&(x, y, z))
     }
 
-    pub fn get_voxel_at_position_mut(&mut self, x: usize, y: usize, z: usize) -> &mut Voxel {
-        &mut self.array[VoxelArray::get_voxel_index(x, y, z)]
+    pub fn get_mut(&mut self, x: i32, y: i32, z: i32) -> Option<&mut T> {
+        self.chunks.get_mut(&(x, y, z))
     }
 
-    pub fn get_voxel_at_index(&self, i: usize) -> &Voxel {
-        &self.array[i]
-    }
-
-    pub fn get_voxel_at_index_mut(&mut self, i: usize) -> &mut Voxel {
-        &mut self.array[i]
-    }
-
-    pub fn get_voxel_index(x: usize, y: usize, z: usize) -> usize {
-        z * (CHUNK_SIZE_X * CHUNK_SIZE_Y) + y * CHUNK_SIZE_X + x
-    }
-}
-
-pub struct Chunk {
-    voxels: VoxelArray,
-}
-
-impl Chunk {
-    pub fn new(default_voxel: Voxel) -> Chunk {
-        Chunk {
-            voxels: VoxelArray::new(default_voxel),
-        }
-    }
-
-    pub fn get_voxels(&self) -> &VoxelArray {
-        &self.voxels
-    }
-
-    pub fn get_voxels_mut(&mut self) -> &mut VoxelArray {
-        &mut self.voxels
+    pub fn add(&mut self, chunk: T, x: i32, y: i32, z: i32) {
+        self.chunks.insert((x, y, z), chunk);
     }
 }

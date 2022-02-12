@@ -36,7 +36,7 @@ pub fn local_to_global(xyz_local: (u32, u32, u32), xyz_chunk: (i32, i32, i32)) -
     (
         xyz_local.0 as i32 + xyz_chunk.0 * chunk::CHUNK_SIZE_X as i32,
         xyz_local.1 as i32 + xyz_chunk.1 * chunk::CHUNK_SIZE_X as i32,
-        xyz_local.2 as i32 + xyz_chunk.2 * chunk::CHUNK_SIZE_X as i32
+        xyz_local.2 as i32 + xyz_chunk.2 * chunk::CHUNK_SIZE_X as i32,
     )
 }
 
@@ -44,13 +44,13 @@ pub fn global_to_local(x: i32, y: i32, z: i32) -> ((u32, u32, u32), (i32, i32, i
     let chunk_coords = (
         x.div_euclid(chunk::CHUNK_SIZE_X as i32),
         y.div_euclid(chunk::CHUNK_SIZE_Y as i32),
-        z.div_euclid(chunk::CHUNK_SIZE_Z as i32)
+        z.div_euclid(chunk::CHUNK_SIZE_Z as i32),
     );
 
     let local_coords = (
         x.rem_euclid(chunk::CHUNK_SIZE_X as i32) as u32,
         y.div_euclid(chunk::CHUNK_SIZE_Y as i32) as u32,
-        z.div_euclid(chunk::CHUNK_SIZE_Z as i32) as u32
+        z.div_euclid(chunk::CHUNK_SIZE_Z as i32) as u32,
     );
 
     (local_coords, chunk_coords)
