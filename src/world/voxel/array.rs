@@ -1,6 +1,5 @@
-
-use crate::world::chunk::*;
 use super::Voxel;
+use crate::world::chunk::*;
 
 pub struct VoxelArray {
     array: Box<[Voxel]>,

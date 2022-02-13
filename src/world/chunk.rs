@@ -16,7 +16,9 @@ pub struct ChunkArray<T> {
 
 impl<T> ChunkArray<T> {
     pub fn new() -> ChunkArray<T> {
-        ChunkArray { chunks: BTreeMap::new() }
+        ChunkArray {
+            chunks: BTreeMap::new(),
+        }
     }
 
     pub fn get(&self, x: i32, y: i32, z: i32) -> Option<&T> {

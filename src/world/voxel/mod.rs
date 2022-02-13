@@ -1,5 +1,5 @@
 //! This module contains definitions for voxels and voxel-related structures
-//! 
+//!
 //! The `Voxel` struct is meant to be the representation of a voxel in a grid
 //!
 //! Voxels' behavior is defined through a collection of _attributes_.
@@ -13,8 +13,8 @@ use array::VoxelArray;
 use thiserror::Error;
 
 //Modules
-mod registry;
 mod array;
+mod registry;
 
 //Exports
 pub use registry::{VoxelAttributeRegistry, VoxelNameRegistry};
@@ -50,7 +50,9 @@ pub struct VoxelSystem {
 
 impl VoxelSystem {
     pub fn new() -> VoxelSystem {
-        VoxelSystem { chunks: ChunkArray::new() }
+        VoxelSystem {
+            chunks: ChunkArray::new(),
+        }
     }
 
     pub fn get_chunk(&self, x: i32, y: i32, z: i32) -> Option<&VoxelArray> {
