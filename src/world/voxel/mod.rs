@@ -10,23 +10,26 @@
 //Uses
 use super::chunk::ChunkArray;
 use array::VoxelArray;
-use thiserror::Error;
+use std::sync::Arc;
+use thiserror;
 
 //Modules
 mod array;
 mod registry;
 
 //Exports
-pub use registry::{VoxelAttributeRegistry, VoxelNameRegistry};
+pub use registry::{Attribute, AttributeRegistry, NameRegistry};
 
-#[derive(Error, Debug)]
-pub enum VoxelError {
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
     #[error("An attribute has already been registered for ID {0}")]
     AttributeAlreadyRegistered(u16),
     #[error("An attribute that has been requested is missing for ID {0}")]
     AttributeMissing(u16),
     #[error("A name has already been registered with the ID {0}")]
     NameAlreadyRegistered(u16),
+    #[error("An attribute registry has alreayd been added! Attribute name: {0}")]
+    RegistryAlreadyAdded(&'static str),
 }
 
 /// One block in a chunk
@@ -46,12 +49,19 @@ impl Voxel {
 
 pub struct VoxelSystem {
     chunks: ChunkArray<VoxelArray>,
+    name_registry: NameRegistry,
+    attribute_registries: registry::AttributeRegistries,
 }
 
 impl VoxelSystem {
-    pub fn new() -> VoxelSystem {
+    pub fn new(
+        name_registry: NameRegistry,
+        attribute_registries: registry::AttributeRegistries,
+    ) -> VoxelSystem {
         VoxelSystem {
             chunks: ChunkArray::new(),
+            name_registry,
+            attribute_registries,
         }
     }
 
@@ -61,5 +71,13 @@ impl VoxelSystem {
 
     pub fn get_chunk_mut(&mut self, x: i32, y: i32, z: i32) -> Option<&mut VoxelArray> {
         self.chunks.get_mut(x, y, z)
+    }
+
+    pub fn name_registry(&self) -> &NameRegistry {
+        &self.name_registry()
+    }
+
+    pub fn get_attribute_registry<A: Attribute>(&self) -> Option<Arc<AttributeRegistry<A>>> {
+        self.attribute_registries.get_registry::<A>()
     }
 }
