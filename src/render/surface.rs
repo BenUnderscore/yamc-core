@@ -1,30 +1,20 @@
-//! Contains functionality that isn't related to rasterizing geometry
+//! Contains the rendering context, which handles all of the top-level framebuffers and surface
 
-struct RenderContext {
+struct RenderSurface {
     //Surface constants
     surface: wgpu::Surface,
     surface_format: wgpu::TextureFormat,
     size_x: u32,
     size_y: u32,
-
-    //Auxilliary buffers
-    depth_buffer: Option<wgpu::Texture>,
 }
 
-/// The output object for all of the 3D rendering operations
-struct GeometryBuffers {
-    pub albedo: wgpu::TextureView,
-    pub depth: Option<wgpu::TextureView>,
-}
-
-impl RenderContext {
-    pub fn init(device: &wgpu::Device, surface: wgpu::Surface, size_x: u32, size_y: u32) -> RenderContext {
+impl RenderSurface {
+    pub fn init(device: &wgpu::Device, surface: wgpu::Surface, size_x: u32, size_y: u32) -> RenderSurface {
         let surface_format = wgpu::TextureFormat::Rgba8Unorm;
 
-        let ctx = RenderContext {
+        let ctx = RenderSurface {
             surface,
             surface_format,
-            depth_buffer: None,
             size_x,
             size_y
         };
@@ -51,11 +41,7 @@ impl RenderContext {
         self.surface.configure(device, &surface_config);
     }
 
-    pub fn get_new_geometry_buffers(&self) -> GeometryBuffers {
-        let surface_texture = self.surface.get_current_texture().unwrap();
-    }
-
-    pub fn present_frame(&self) {
-
+    pub fn get_surface_texture(&self) -> wgpu::SurfaceTexture {
+        self.surface.get_current_texture().unwrap()
     }
 }

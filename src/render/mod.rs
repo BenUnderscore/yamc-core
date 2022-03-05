@@ -10,7 +10,7 @@ use wgpu::util::DeviceExt;
 
 //Module definitions
 mod voxel;
-mod context;
+mod surface;
 
 //Exports
 use voxel::VoxelRenderSystem;
