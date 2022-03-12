@@ -27,26 +27,64 @@ pub struct VoxelRenderSystem {
     pipeline: wgpu::RenderPipeline,
 }
 
+pub struct PipelineInitParams {
+    pub output_texture_format: wgpu::TextureFormat,
+}
+
 impl VoxelRenderSystem {
     pub fn new(
-        res: &res::ResourceSystem,
+        res: &mut res::ResourceSystem,
         device: &wgpu::Device,
+        pipeline_init: PipelineInitParams,
     ) -> VoxelRenderSystem {
-        let pipeline = create_render_pipeline(device, res);
+        let pipeline = create_render_pipeline(device, res, &pipeline_init);
+
+        VoxelRenderSystem {
+            chunks: ChunkArray::new(),
+            pipeline,
+        }
     }
 
-    pub fn update(&mut self, voxel_system: &voxel::VoxelSystem) {
-        
+    pub fn update(&mut self, voxel_system: &voxel::VoxelSystem) {}
+
+    pub fn encode_commands(
+        &self,
+        device: &wgpu::Device,
+        color_buf: wgpu::TextureView,
+    ) -> wgpu::CommandBuffer {
+        let mut command_encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("VoxelRenderSystem"),
+        });
+
+        {
+            let render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Voxel rendering"),
+                color_attachments: &[
+                    wgpu::RenderPassColorAttachment {
+                        view: &color_buf,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Load,
+                            store: true,
+                        }
+                    }
+                ],
+                depth_stencil_attachment: None,
+            });
+        }
+
+        command_encoder.finish()
     }
 }
 
 fn create_render_pipeline(
     device: &wgpu::Device,
-    resource_system: &res::ResourceSystem
+    resource_system: &mut res::ResourceSystem,
+    pipeline_init: &PipelineInitParams,
 ) -> wgpu::RenderPipeline {
     let shader_source_res = resource_system
-            .get_loaded_resource("shaders/voxel.wgsl", res::ResourceLoadType::PlainText)
-            .unwrap();
+        .get_loaded_resource("shaders/voxel.wgsl", res::ResourceLoadType::PlainText)
+        .unwrap();
     let shader_source = shader_source_res.data.as_text().unwrap();
     let shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
         label: Some("shaders/voxel.wgsl"),
@@ -55,18 +93,16 @@ fn create_render_pipeline(
     let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
         bind_group_layouts: &[],
-        push_constant_ranges: &[]
+        push_constant_ranges: &[],
     });
     let vertex_buffer_layout = wgpu::VertexBufferLayout {
         array_stride: std::mem::size_of::<VoxelVertex>() as wgpu::BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &[
-            wgpu::VertexAttribute {
-                offset: 0,
-                shader_location: 0,
-                format: wgpu::VertexFormat::Float32x3,
-            }
-        ]
+        attributes: &[wgpu::VertexAttribute {
+            offset: 0,
+            shader_location: 0,
+            format: wgpu::VertexFormat::Float32x3,
+        }],
     };
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("Voxel rendering pipeline"),
@@ -74,21 +110,38 @@ fn create_render_pipeline(
         vertex: wgpu::VertexState {
             module: &shader,
             entry_point: "vertex_main",
-            buffers: &[
-                vertex_buffer_layout
-            ],
+            buffers: &[vertex_buffer_layout],
         },
         fragment: Some(wgpu::FragmentState {
             module: &shader,
             entry_point: "fragment_main",
             targets: &[wgpu::ColorTargetState {
-            }];
-        })
+                format: pipeline_init.output_texture_format,
+                blend: Some(wgpu::BlendState::REPLACE),
+                write_mask: wgpu::ColorWrites::ALL,
+            }],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleList,
+            strip_index_format: None,
+            front_face: wgpu::FrontFace::Ccw,
+            cull_mode: Some(wgpu::Face::Back),
+            polygon_mode: wgpu::PolygonMode::Fill,
+            unclipped_depth: false,
+            conservative: false,
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState {
+            count: 1,
+            mask: !0,
+            alpha_to_coverage_enabled: false,
+        },
+        multiview: None,
     })
 }
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 struct VoxelVertex {
     position: [f32; 3],
-    color: [f32; 3]
+    color: [f32; 3],
 }

@@ -79,6 +79,7 @@ impl AttributeRegistries {
         Some(
             self.regs
                 .get(&type_id)?
+                .clone()
                 .downcast::<AttributeRegistry<A>>()
                 .unwrap(),
         )

@@ -1,6 +1,6 @@
-//! Contains the rendering context, which handles all of the top-level framebuffers and surface
+//! Handles the top-level surface
 
-struct RenderSurface {
+pub struct RenderSurface {
     //Surface constants
     surface: wgpu::Surface,
     surface_format: wgpu::TextureFormat,
@@ -9,14 +9,19 @@ struct RenderSurface {
 }
 
 impl RenderSurface {
-    pub fn init(device: &wgpu::Device, surface: wgpu::Surface, size_x: u32, size_y: u32) -> RenderSurface {
+    pub fn init(
+        device: &wgpu::Device,
+        surface: wgpu::Surface,
+        size_x: u32,
+        size_y: u32,
+    ) -> RenderSurface {
         let surface_format = wgpu::TextureFormat::Rgba8Unorm;
 
         let ctx = RenderSurface {
             surface,
             surface_format,
             size_x,
-            size_y
+            size_y,
         };
 
         ctx.configure_surface(device);

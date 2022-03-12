@@ -1,5 +1,5 @@
 //! Contains all simulation fundamentals
-//! 
+//!
 //! The `World` object contains an entire simulation context.
 //! The world consists of a collection of systems.
 //! These systems are each responsible for one aspect of the simulation.
@@ -25,7 +25,7 @@ struct World {
 /// Allows for the incremental initialization of a `World` object
 struct WorldBuilder {
     voxel_system: Option<VoxelSystem>,
-    render_system: Option<RenderSystem>
+    render_system: Option<RenderSystem>,
 }
 
 impl WorldBuilder {
@@ -49,7 +49,7 @@ impl WorldBuilder {
             core_systems: CoreSystems {
                 voxel: self.voxel_system.ok_or(())?,
                 render: self.render_system,
-            }
+            },
         };
 
         Ok(world)
@@ -58,10 +58,10 @@ impl WorldBuilder {
 
 impl World {
     pub fn render(&self) {
-        self.core_systems.render.unwrap().render();
+        if let Some(ref render_system) = self.core_systems.render {
+            render_system.render();
+        }
     }
 
-    pub fn update(&mut self) {
-        
-    }
+    pub fn update(&mut self) {}
 }

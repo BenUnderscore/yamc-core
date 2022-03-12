@@ -1,16 +1,14 @@
 //Uses
-use crate::event_loop::EventLoopProxy;
-use crate::res::{LoadedResourceData, ResourceLoadType, ResourceSystem};
-use bytemuck;
 use pollster::block_on;
-use std::cell::Cell;
-use std::sync::Arc;
 use wgpu;
-use wgpu::util::DeviceExt;
+
+use crate::event_loop::EventLoopProxy;
+use crate::res::ResourceSystem;
+use surface::RenderSurface;
 
 //Module definitions
-mod voxel;
 mod surface;
+mod voxel;
 
 //Exports
 use voxel::VoxelRenderSystem;
@@ -21,6 +19,7 @@ pub struct RenderSystem {
     queue: wgpu::Queue,
 
     //Subsystems
+    surface: RenderSurface,
     voxel_system: VoxelRenderSystem,
 }
 
@@ -47,6 +46,39 @@ impl RenderSystem {
             None,
         ))
         .unwrap();
+
+        let surface_format = surface.get_preferred_format(&adapter).unwrap();
+
+        let surface = surface::RenderSurface::init(
+            &device,
+            surface,
+            window_inner_size.width,
+            window_inner_size.height,
+        );
+
+        let voxel_system = voxel::VoxelRenderSystem::new(
+            res,
+            &device,
+            voxel::PipelineInitParams {
+                output_texture_format: surface_format,
+            },
+        );
+
+        RenderSystem {
+            device: Some(device),
+            queue,
+            surface,
+            voxel_system,
+        }
+    }
+
+    pub fn render(&self) {
+        let surface_texture = self.surface.get_surface_texture();
+        let texture_view = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        let voxel_commands = self.voxel_system.encode_commands(self.device.as_ref().unwrap(), texture_view);
+        self.queue.submit(std::iter::once(voxel_commands));
+        surface_texture.present();
     }
 }
 
