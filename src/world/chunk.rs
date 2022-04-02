@@ -30,6 +30,16 @@ impl<T> ChunkArray<T> {
     }
 
     pub fn add(&mut self, chunk: T, x: i32, y: i32, z: i32) {
-        self.chunks.insert((x, y, z), chunk);
+        self.try_add(chunk, x, y, z).unwrap();
+    }
+
+    pub fn try_add(&mut self, chunk: T, x: i32, y: i32, z: i32) -> Result<(), ()> {
+        let key = (x, y, z);
+        if self.chunks.contains_key(&key) {
+            Err(())
+        } else {
+            self.chunks.insert(key, chunk);
+            Ok(())
+        }
     }
 }

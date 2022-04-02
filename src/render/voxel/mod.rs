@@ -45,7 +45,21 @@ impl VoxelRenderSystem {
         }
     }
 
-    pub fn update(&mut self, voxel_system: &voxel::VoxelSystem) {}
+    pub fn update(&mut self, voxel_system: &voxel::VoxelSystem) {
+        let voxel_events = voxel_system.get_events();
+        for ev in voxel_events.iter() {
+            match ev {
+                voxel::Event::ChunkLoaded {
+                    coords_x,
+                    coords_y,
+                    coords_z
+                } => {
+                    //self.chunks.get(coords_x, coords_y, coords_z)
+                },
+                _ => (),
+            }
+        }
+    }
 
     pub fn encode_commands(
         &self,
