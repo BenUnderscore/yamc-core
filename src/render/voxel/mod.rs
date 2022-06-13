@@ -2,6 +2,7 @@
 use crate::world::chunk::ChunkArray;
 use crate::world::voxel::VoxelSystem;
 use crate::world::voxel;
+use super::Camera;
 use crate::res;
 use wgpu;
 
@@ -64,6 +65,7 @@ impl VoxelRenderSystem {
         &self,
         device: &wgpu::Device,
         color_buf: wgpu::TextureView,
+        camera: &Camera
     ) -> wgpu::CommandBuffer {
         let mut command_encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("VoxelRenderSystem"),

@@ -57,11 +57,5 @@ impl WorldBuilder {
 }
 
 impl World {
-    pub fn render(&self) {
-        if let Some(ref render_system) = self.core_systems.render {
-            render_system.render();
-        }
-    }
-
     pub fn update(&mut self) {}
 }
