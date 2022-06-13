@@ -4,16 +4,8 @@ use crate::world::chunk::ChunkArray;
 use crate::world::voxel;
 use wgpu;
 
-pub struct SolidModel {
-    color: (f32, f32, f32),
-}
-
-pub enum AppearanceAttribute {
-    /// A regular solid block,
-    Solid(SolidModel),
-    /// Completely transparent (air)
-    None,
-}
+//Modules
+mod mesh;
 
 struct ChunkData {
     buffer: wgpu::Buffer,
@@ -52,10 +44,10 @@ impl VoxelRenderSystem {
                 voxel::Event::ChunkLoaded {
                     coords_x,
                     coords_y,
-                    coords_z
+                    coords_z,
                 } => {
                     //self.chunks.get(coords_x, coords_y, coords_z)
-                },
+                }
                 _ => (),
             }
         }
@@ -73,16 +65,14 @@ impl VoxelRenderSystem {
         {
             let render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Voxel rendering"),
-                color_attachments: &[
-                    wgpu::RenderPassColorAttachment {
-                        view: &color_buf,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: true,
-                        }
-                    }
-                ],
+                color_attachments: &[wgpu::RenderPassColorAttachment {
+                    view: &color_buf,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: true,
+                    },
+                }],
                 depth_stencil_attachment: None,
             });
         }
@@ -110,7 +100,7 @@ fn create_render_pipeline(
         push_constant_ranges: &[],
     });
     let vertex_buffer_layout = wgpu::VertexBufferLayout {
-        array_stride: std::mem::size_of::<VoxelVertex>() as wgpu::BufferAddress,
+        array_stride: std::mem::size_of::<mesh::VoxelVertex>() as wgpu::BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
         attributes: &[wgpu::VertexAttribute {
             offset: 0,
@@ -152,10 +142,4 @@ fn create_render_pipeline(
         },
         multiview: None,
     })
-}
-#[repr(C)]
-#[derive(Clone, Copy, Debug)]
-struct VoxelVertex {
-    position: [f32; 3],
-    color: [f32; 3],
 }

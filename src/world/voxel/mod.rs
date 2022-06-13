@@ -9,7 +9,6 @@
 
 //Uses
 use super::chunk::ChunkArray;
-use array::VoxelArray;
 use std::sync::Arc;
 use thiserror;
 
@@ -18,6 +17,7 @@ mod array;
 mod registry;
 
 //Exports
+pub use array::VoxelArray;
 pub use registry::{Attribute, AttributeRegistry, NameRegistry};
 
 #[derive(thiserror::Error, Debug)]
@@ -54,7 +54,7 @@ pub enum Event {
         coords_x: i32,
         coords_y: i32,
         coords_z: i32,
-    }
+    },
 }
 
 pub struct VoxelSystem {
@@ -98,7 +98,9 @@ impl VoxelSystem {
     }
 
     pub fn load_chunk(&mut self, voxels: VoxelArray, x: i32, y: i32, z: i32) -> Result<(), Error> {
-        self.chunks.try_add(voxels, x, y, z).map_err(|_| Error::ChunkAlreadyLoaded(x, y, z))?;
+        self.chunks
+            .try_add(voxels, x, y, z)
+            .map_err(|_| Error::ChunkAlreadyLoaded(x, y, z))?;
         self.recorded_events.push(Event::ChunkLoaded {
             coords_x: x,
             coords_y: y,

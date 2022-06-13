@@ -74,9 +74,13 @@ impl RenderSystem {
 
     pub fn render(&self) {
         let surface_texture = self.surface.get_surface_texture();
-        let texture_view = surface_texture.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let texture_view = surface_texture
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let voxel_commands = self.voxel_system.encode_commands(self.device.as_ref().unwrap(), texture_view);
+        let voxel_commands = self
+            .voxel_system
+            .encode_commands(self.device.as_ref().unwrap(), texture_view);
         self.queue.submit(std::iter::once(voxel_commands));
         surface_texture.present();
     }

@@ -3,12 +3,18 @@
 //! The primary type of this module is `ChunkArray`, which is an array
 //! that is designed to hold one object per chunk.
 
-//Uses
-use std::collections::BTreeMap;
+//Modules
 
-pub const CHUNK_SIZE_X: usize = 16;
-pub const CHUNK_SIZE_Y: usize = 16;
-pub const CHUNK_SIZE_Z: usize = 16;
+//! Import with wildcard to bring in the CHUNK_SIZE_* constants
+pub mod size {
+    pub const CHUNK_SIZE_X: usize = 16;
+    pub const CHUNK_SIZE_Y: usize = 16;
+    pub const CHUNK_SIZE_Z: usize = 16;
+}
+
+//Uses
+use size::*;
+use std::collections::BTreeMap;
 
 pub struct ChunkArray<T> {
     chunks: BTreeMap<(i32, i32, i32), T>,
