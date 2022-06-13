@@ -1,7 +1,8 @@
 //Uses
-use crate::res;
 use crate::world::chunk::ChunkArray;
+use crate::world::voxel::VoxelSystem;
 use crate::world::voxel;
+use crate::res;
 use wgpu;
 
 //Modules
@@ -37,7 +38,9 @@ impl VoxelRenderSystem {
         }
     }
 
-    pub fn update(&mut self, voxel_system: &voxel::VoxelSystem) {
+    pub fn update(&mut self, voxel_system: &VoxelSystem) {
+        let appearance_registry = voxel_system.get_attribute_registry::<mesh::AppearanceAttribute>().unwrap();
+
         let voxel_events = voxel_system.get_events();
         for ev in voxel_events.iter() {
             match ev {
@@ -46,7 +49,11 @@ impl VoxelRenderSystem {
                     coords_y,
                     coords_z,
                 } => {
-                    //self.chunks.get(coords_x, coords_y, coords_z)
+                    let voxel_array_option =
+                        voxel_system.get_chunk(*coords_x, *coords_y, *coords_z);
+                    if let Some(voxel_array) = voxel_array_option {
+                        let mesh = mesh::generate_mesh(voxel_array, appearance_registry.as_ref());
+                    }
                 }
                 _ => (),
             }

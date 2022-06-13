@@ -13,9 +13,6 @@ pub mod voxel;
 use crate::render::RenderSystem;
 use voxel::VoxelSystem;
 
-//Exports
-pub use chunk::{CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z};
-
 struct CoreSystems {
     voxel: VoxelSystem,
     render: Option<RenderSystem>,

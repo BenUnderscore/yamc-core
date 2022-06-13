@@ -78,7 +78,7 @@ pub fn generate_mesh(
                 let voxel = voxel_array.get_voxel_at_position(x, y, z);
                 let appearance = appearance_registry.find(voxel.id).unwrap();
 
-                match *appearance {
+                match appearance {
                     AppearanceAttribute::None => (),
                     AppearanceAttribute::Solid(model) => {
                         output.reserve(36);
