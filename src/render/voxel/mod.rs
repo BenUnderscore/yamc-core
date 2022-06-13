@@ -7,7 +7,11 @@ use crate::res;
 use wgpu;
 
 //Modules
+mod appearance;
 mod mesh;
+
+//Exports
+pub use appearance::{AppearanceAttribute, SolidModel};
 
 struct ChunkData {
     buffer: wgpu::Buffer,
@@ -21,12 +25,12 @@ pub struct VoxelRenderSystem {
     pipeline: wgpu::RenderPipeline,
 }
 
-pub struct PipelineInitParams {
+pub(super) struct PipelineInitParams {
     pub output_texture_format: wgpu::TextureFormat,
 }
 
 impl VoxelRenderSystem {
-    pub fn new(
+    pub(super) fn new(
         res: &mut res::ResourceSystem,
         device: &wgpu::Device,
         pipeline_init: PipelineInitParams,
@@ -39,7 +43,7 @@ impl VoxelRenderSystem {
         }
     }
 
-    pub fn update(&mut self, voxel_system: &VoxelSystem) {
+    pub fn update(&mut self, voxel_system: &VoxelSystem, queue: wgpu::Queue) {
         let appearance_registry = voxel_system.get_attribute_registry::<mesh::AppearanceAttribute>().unwrap();
 
         let voxel_events = voxel_system.get_events();
@@ -61,7 +65,7 @@ impl VoxelRenderSystem {
         }
     }
 
-    pub fn encode_commands(
+    pub(super) fn encode_commands(
         &self,
         device: &wgpu::Device,
         color_buf: wgpu::TextureView,

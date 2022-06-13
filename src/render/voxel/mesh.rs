@@ -1,24 +1,14 @@
 //Uses
+use super::appearance::{AppearanceAttribute, SolidModel};
+use crate::world::voxel::VoxelArray;
 use crate::world::chunk::size::*;
 use crate::world::voxel;
-use crate::world::voxel::VoxelArray;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
-pub struct VoxelVertex {
+pub(super) struct VoxelVertex {
     position: [f32; 3],
     color: [f32; 3],
-}
-
-pub struct SolidModel {
-    color: (f32, f32, f32),
-}
-
-pub enum AppearanceAttribute {
-    /// A regular solid block,
-    Solid(SolidModel),
-    /// Completely transparent (air)
-    None,
 }
 
 const CUBE_VERTICES: [[f32; 3]; 36] = [
@@ -66,7 +56,7 @@ const CUBE_VERTICES: [[f32; 3]; 36] = [
     [1.0, 0.0, 0.0],
 ];
 
-pub fn generate_mesh(
+pub(super) fn generate_mesh(
     voxel_array: &VoxelArray,
     appearance_registry: &voxel::AttributeRegistry<AppearanceAttribute>,
 ) -> Vec<VoxelVertex> {

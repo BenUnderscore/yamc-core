@@ -7,11 +7,8 @@ use pollster::block_on;
 use wgpu;
 
 //Module definitions
+pub mod voxel;
 mod surface;
-mod voxel;
-
-//Exports
-use voxel::VoxelRenderSystem;
 
 #[derive(Clone, Copy)]
 pub struct Camera {
