@@ -1,14 +1,15 @@
 //Uses
 use crate::event_loop::EventLoopProxy;
 use crate::res::ResourceSystem;
-use surface::RenderSurface;
-use cgmath::{Matrix4, Vector3, Euler};
+use cgmath::{Euler, Matrix4, Vector3};
 use pollster::block_on;
+use surface::RenderSurface;
+use voxel::VoxelRenderSystem;
 use wgpu;
 
 //Module definitions
-pub mod voxel;
 mod surface;
+pub mod voxel;
 
 #[derive(Clone, Copy)]
 pub struct Camera {
@@ -82,9 +83,9 @@ impl RenderSystem {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let voxel_commands = self
-            .voxel_system
-            .encode_commands(self.device.as_ref().unwrap(), texture_view, &camera);
+        let voxel_commands =
+            self.voxel_system
+                .encode_commands(self.device.as_ref().unwrap(), texture_view, &camera);
         self.queue.submit(std::iter::once(voxel_commands));
         surface_texture.present();
     }

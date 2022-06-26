@@ -1,9 +1,9 @@
 //Uses
-use crate::world::chunk::ChunkArray;
-use crate::world::voxel::VoxelSystem;
-use crate::world::voxel;
 use super::Camera;
 use crate::res;
+use crate::world::chunk::ChunkArray;
+use crate::world::voxel;
+use crate::world::voxel::VoxelSystem;
 use wgpu;
 
 //Modules
@@ -17,7 +17,7 @@ struct ChunkData {
     buffer: wgpu::Buffer,
 }
 
-pub struct VoxelRenderSystem {
+pub(super) struct VoxelRenderSystem {
     //Chunk array
     chunks: ChunkArray<ChunkData>,
 
@@ -44,7 +44,9 @@ impl VoxelRenderSystem {
     }
 
     pub fn update(&mut self, voxel_system: &VoxelSystem, queue: wgpu::Queue) {
-        let appearance_registry = voxel_system.get_attribute_registry::<mesh::AppearanceAttribute>().unwrap();
+        let appearance_registry = voxel_system
+            .get_attribute_registry::<AppearanceAttribute>()
+            .unwrap();
 
         let voxel_events = voxel_system.get_events();
         for ev in voxel_events.iter() {
@@ -69,7 +71,7 @@ impl VoxelRenderSystem {
         &self,
         device: &wgpu::Device,
         color_buf: wgpu::TextureView,
-        camera: &Camera
+        camera: &Camera,
     ) -> wgpu::CommandBuffer {
         let mut command_encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("VoxelRenderSystem"),

@@ -18,7 +18,7 @@ mod registry;
 
 //Exports
 pub use array::VoxelArray;
-pub use registry::{AttributeRegistries, Attribute, AttributeRegistry, NameRegistry};
+pub use registry::{Attribute, AttributeRegistries, AttributeRegistry, NameRegistry};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

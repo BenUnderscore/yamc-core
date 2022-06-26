@@ -14,6 +14,6 @@ use crate::render::RenderSystem;
 use voxel::VoxelSystem;
 
 pub struct CoreSystems {
-    voxel: VoxelSystem,
-    render: Option<RenderSystem>,
+    pub voxel: VoxelSystem,
+    pub render: Option<RenderSystem>,
 }

@@ -1,8 +1,8 @@
 //Uses
 use super::appearance::{AppearanceAttribute, SolidModel};
-use crate::world::voxel::VoxelArray;
 use crate::world::chunk::size::*;
 use crate::world::voxel;
+use crate::world::voxel::VoxelArray;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
