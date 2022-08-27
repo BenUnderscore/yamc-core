@@ -26,7 +26,7 @@ impl<A: Attribute> AttributeRegistry<A> {
 
     pub fn register(&mut self, id: u16, attribute_obj: A) -> Result<(), super::Error> {
         if id as usize >= self.map.len() {
-            self.map.resize_with(id as usize, Option::default);
+            self.map.resize_with(id as usize + 1, Option::default);
         }
 
         match self.map[id as usize] {
