@@ -42,7 +42,7 @@ impl VoxelRenderSystem {
         }
     }
 
-    pub fn update(&mut self, voxel_system: &VoxelSystem, queue: wgpu::Queue) {
+    pub fn update(&mut self, voxel_system: &VoxelSystem, queue: &wgpu::Queue) {
         let appearance_registry = voxel_system
             .get_attribute_registry::<AppearanceAttribute>()
             .unwrap();
