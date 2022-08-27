@@ -1,25 +1,23 @@
 //Uses
+use super::Camera;
 use crate::res;
 use crate::world::chunk::ChunkArray;
 use crate::world::voxel;
+use crate::world::voxel::VoxelSystem;
 use wgpu;
 
-pub struct SolidModel {
-    color: (f32, f32, f32),
-}
+//Modules
+mod appearance;
+mod mesh;
 
-pub enum AppearanceAttribute {
-    /// A regular solid block,
-    Solid(SolidModel),
-    /// Completely transparent (air)
-    None,
-}
+//Exports
+pub use appearance::{AppearanceAttribute, SolidModel};
 
 struct ChunkData {
     buffer: wgpu::Buffer,
 }
 
-pub struct VoxelRenderSystem {
+pub(super) struct VoxelRenderSystem {
     //Chunk array
     chunks: ChunkArray<ChunkData>,
 
@@ -27,12 +25,12 @@ pub struct VoxelRenderSystem {
     pipeline: wgpu::RenderPipeline,
 }
 
-pub struct PipelineInitParams {
+pub(super) struct PipelineInitParams {
     pub output_texture_format: wgpu::TextureFormat,
 }
 
 impl VoxelRenderSystem {
-    pub fn new(
+    pub(super) fn new(
         res: &mut res::ResourceSystem,
         device: &wgpu::Device,
         pipeline_init: PipelineInitParams,
@@ -45,26 +43,35 @@ impl VoxelRenderSystem {
         }
     }
 
-    pub fn update(&mut self, voxel_system: &voxel::VoxelSystem) {
+    pub fn update(&mut self, voxel_system: &VoxelSystem, queue: wgpu::Queue) {
+        let appearance_registry = voxel_system
+            .get_attribute_registry::<AppearanceAttribute>()
+            .unwrap();
+
         let voxel_events = voxel_system.get_events();
         for ev in voxel_events.iter() {
             match ev {
                 voxel::Event::ChunkLoaded {
                     coords_x,
                     coords_y,
-                    coords_z
+                    coords_z,
                 } => {
-                    //self.chunks.get(coords_x, coords_y, coords_z)
-                },
+                    let voxel_array_option =
+                        voxel_system.get_chunk(*coords_x, *coords_y, *coords_z);
+                    if let Some(voxel_array) = voxel_array_option {
+                        let mesh = mesh::generate_mesh(voxel_array, appearance_registry.as_ref());
+                    }
+                }
                 _ => (),
             }
         }
     }
 
-    pub fn encode_commands(
+    pub(super) fn encode_commands(
         &self,
         device: &wgpu::Device,
         color_buf: wgpu::TextureView,
+        camera: &Camera,
     ) -> wgpu::CommandBuffer {
         let mut command_encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("VoxelRenderSystem"),
@@ -73,16 +80,14 @@ impl VoxelRenderSystem {
         {
             let render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Voxel rendering"),
-                color_attachments: &[
-                    wgpu::RenderPassColorAttachment {
-                        view: &color_buf,
-                        resolve_target: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: true,
-                        }
-                    }
-                ],
+                color_attachments: &[wgpu::RenderPassColorAttachment {
+                    view: &color_buf,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: true,
+                    },
+                }],
                 depth_stencil_attachment: None,
             });
         }
@@ -110,7 +115,7 @@ fn create_render_pipeline(
         push_constant_ranges: &[],
     });
     let vertex_buffer_layout = wgpu::VertexBufferLayout {
-        array_stride: std::mem::size_of::<VoxelVertex>() as wgpu::BufferAddress,
+        array_stride: std::mem::size_of::<mesh::VoxelVertex>() as wgpu::BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
         attributes: &[wgpu::VertexAttribute {
             offset: 0,
@@ -152,10 +157,4 @@ fn create_render_pipeline(
         },
         multiview: None,
     })
-}
-#[repr(C)]
-#[derive(Clone, Copy, Debug)]
-struct VoxelVertex {
-    position: [f32; 3],
-    color: [f32; 3],
 }

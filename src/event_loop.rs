@@ -83,9 +83,21 @@ impl EventLoopProxy {
         self.el_proxy.send_event(event).unwrap();
     }
 
+    pub fn create_device_event_channel(&self) -> mpsc::Receiver<DeviceEvent> {
+        let (tx, rx) = mpsc::channel();
+        self.register_device_event_sender(Some(tx));
+        rx
+    }
+
     pub fn register_window_event_sender(&self, tx: Option<mpsc::Sender<WindowEvent>>) {
         let event = EventLoopEvent::RegisterWindowEventSender { sender: tx };
         self.el_proxy.send_event(event).unwrap();
+    }
+
+    pub fn create_window_event_channel(&self) -> mpsc::Receiver<WindowEvent> {
+        let (tx, rx) = mpsc::channel();
+        self.register_window_event_sender(Some(tx));
+        rx
     }
 
     pub fn get_window_inner_size(&self) -> Result<winit::dpi::PhysicalSize<u32>> {
