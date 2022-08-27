@@ -1,5 +1,5 @@
 //Uses
-use crate::world::chunk::*;
+use crate::world::chunk::size::*;
 use crate::world::voxel::AttributeRegistry;
 use crate::world::voxel::VoxelArray;
 use bytemuck::{Pod, Zeroable};
@@ -12,7 +12,7 @@ pub struct Vertex {
 }
 
 pub struct SolidColorCubeModel {
-    color: (f32, f32, f32),
+    pub color: (f32, f32, f32),
 }
 
 impl SolidColorCubeModel {

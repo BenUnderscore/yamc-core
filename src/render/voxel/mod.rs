@@ -7,11 +7,10 @@ use crate::world::voxel::VoxelSystem;
 use wgpu;
 
 //Modules
-mod appearance;
 mod mesh;
 
 //Exports
-pub use appearance::{AppearanceAttribute, SolidModel};
+pub use mesh::{AppearanceAttribute, SolidColorCubeModel};
 
 struct ChunkData {
     buffer: wgpu::Buffer,
@@ -115,7 +114,7 @@ fn create_render_pipeline(
         push_constant_ranges: &[],
     });
     let vertex_buffer_layout = wgpu::VertexBufferLayout {
-        array_stride: std::mem::size_of::<mesh::VoxelVertex>() as wgpu::BufferAddress,
+        array_stride: std::mem::size_of::<mesh::Vertex>() as wgpu::BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
         attributes: &[wgpu::VertexAttribute {
             offset: 0,
