@@ -1,6 +1,7 @@
 //Uses
 use crate::event_loop::EventLoopProxy;
 use crate::res::ResourceSystem;
+use crate::world::voxel::VoxelSystem;
 use cgmath::{Euler, Matrix4, Vector3};
 use pollster::block_on;
 use surface::RenderSurface;
@@ -75,6 +76,10 @@ impl RenderSystem {
             surface,
             voxel_system,
         }
+    }
+
+    pub fn update(&mut self, voxel_system: &VoxelSystem) {
+        self.voxel_system.update(voxel_system, &self.queue);
     }
 
     pub fn render(&self, camera: Camera) {
