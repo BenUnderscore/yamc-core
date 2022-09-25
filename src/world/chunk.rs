@@ -48,4 +48,36 @@ impl<T> ChunkArray<T> {
             Ok(())
         }
     }
+
+    pub fn iter<'a>(&'a self) -> Iter<'a, T> {
+        Iter::new(self)
+    }
+}
+
+
+#[derive(Clone)]
+pub struct Iter<'a, T> {
+    internal: std::collections::btree_map::Iter<'a, (i32, i32, i32), T>,
+}
+
+impl<'a, T> Iter<'a, T> {
+    fn new(chunk_array: &'a ChunkArray<T>) -> Iter<'a, T> {
+        Iter {
+            internal: chunk_array.chunks.iter()
+        }
+    }
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = (&'a (i32, i32, i32), &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.internal.next()
+    }
+}
+
+impl<'a, T> ExactSizeIterator for Iter<'a, T> {
+    fn len(&self) -> usize {
+        self.internal.len()
+    }
 }

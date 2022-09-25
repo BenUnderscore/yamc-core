@@ -79,7 +79,7 @@ impl RenderSystem {
     }
 
     pub fn update(&mut self, voxel_system: &VoxelSystem) {
-        self.voxel_system.update(voxel_system, &self.queue);
+        self.voxel_system.update(voxel_system, self.device.as_ref().unwrap(), &self.queue);
     }
 
     pub fn render(&self, camera: Camera) {

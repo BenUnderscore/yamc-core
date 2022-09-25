@@ -4,7 +4,10 @@ use crate::res;
 use crate::world::chunk::ChunkArray;
 use crate::world::voxel;
 use crate::world::voxel::VoxelSystem;
+use log::{debug, trace};
+
 use wgpu;
+use wgpu::util::DeviceExt;
 
 //Modules
 mod mesh;
@@ -14,6 +17,7 @@ pub use mesh::{AppearanceAttribute, SolidColorCubeModel};
 
 struct ChunkData {
     buffer: wgpu::Buffer,
+    vertex_count: u64,
 }
 
 pub(super) struct VoxelRenderSystem {
@@ -42,7 +46,7 @@ impl VoxelRenderSystem {
         }
     }
 
-    pub fn update(&mut self, voxel_system: &VoxelSystem, queue: &wgpu::Queue) {
+    pub fn update(&mut self, voxel_system: &VoxelSystem, device: &wgpu::Device, queue: &wgpu::Queue) {
         let appearance_registry = voxel_system
             .get_attribute_registry::<AppearanceAttribute>()
             .unwrap();
@@ -55,11 +59,23 @@ impl VoxelRenderSystem {
                     coords_y,
                     coords_z,
                 } => {
-                    let voxel_array_option =
-                        voxel_system.get_chunk(*coords_x, *coords_y, *coords_z);
-                    if let Some(voxel_array) = voxel_array_option {
-                        let mesh = mesh::generate_mesh(voxel_array, appearance_registry.as_ref());
-                    }
+                    let voxel_array =
+                        voxel_system.get_chunk(*coords_x, *coords_y, *coords_z).unwrap();
+                    let mesh = mesh::generate_mesh(voxel_array, appearance_registry.as_ref());
+                    let buffer = device.create_buffer_init(
+                        &wgpu::util::BufferInitDescriptor {
+                            label: Some("Voxel mesh"),
+                            contents: bytemuck::cast_slice(&mesh[..]),
+                            usage: wgpu::BufferUsages::VERTEX
+                        }
+                    );
+
+                    let chunk_data = ChunkData {
+                        buffer: buffer,
+                        vertex_count: mesh.len() as u64
+                    };
+                    self.chunks.add(chunk_data, *coords_x, *coords_y, *coords_z);
+                    trace!("Chunk loaded at coordinates: {:?}", (*coords_x, *coords_y, *coords_z))
                 }
                 _ => (),
             }
@@ -89,6 +105,10 @@ impl VoxelRenderSystem {
                 }],
                 depth_stencil_attachment: None,
             });
+
+            for (coords, chunk_data) in self.chunks.iter() {
+                debug!("{:?}", coords);
+            }
         }
 
         command_encoder.finish()
@@ -116,23 +136,19 @@ fn create_render_pipeline(
     let vertex_buffer_layout = wgpu::VertexBufferLayout {
         array_stride: std::mem::size_of::<mesh::Vertex>() as wgpu::BufferAddress,
         step_mode: wgpu::VertexStepMode::Vertex,
-        attributes: &[wgpu::VertexAttribute {
-            offset: 0,
-            shader_location: 0,
-            format: wgpu::VertexFormat::Float32x3,
-        }],
+        attributes: &mesh::Vertex::vertex_attribute_array(0, 1)
     };
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("Voxel rendering pipeline"),
         layout: Some(&render_pipeline_layout),
         vertex: wgpu::VertexState {
             module: &shader,
-            entry_point: "vertex_main",
+            entry_point: "vs_main",
             buffers: &[vertex_buffer_layout],
         },
         fragment: Some(wgpu::FragmentState {
             module: &shader,
-            entry_point: "fragment_main",
+            entry_point: "fs_main",
             targets: &[wgpu::ColorTargetState {
                 format: pipeline_init.output_texture_format,
                 blend: Some(wgpu::BlendState::REPLACE),

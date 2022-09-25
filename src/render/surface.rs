@@ -15,7 +15,7 @@ impl RenderSurface {
         size_x: u32,
         size_y: u32,
     ) -> RenderSurface {
-        let surface_format = wgpu::TextureFormat::Rgba8Unorm;
+        let surface_format = wgpu::TextureFormat::Bgra8Unorm;
 
         let ctx = RenderSurface {
             surface,

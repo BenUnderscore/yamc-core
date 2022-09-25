@@ -14,3 +14,4 @@ pollster = "0.2.4"
 enum-as-inner = "0.3.3"
 bytemuck = { version = "1.4", features = [ "derive" ] }
 cgmath = "0.18"
+trait-set = "0.3.0"

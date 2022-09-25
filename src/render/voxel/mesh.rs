@@ -3,12 +3,20 @@ use crate::world::chunk::size::*;
 use crate::world::voxel::AttributeRegistry;
 use crate::world::voxel::VoxelArray;
 use bytemuck::{Pod, Zeroable};
+use wgpu::vertex_attr_array;
+use wgpu;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Zeroable, Pod)]
 pub struct Vertex {
     position: [f32; 3],
     color: [f32; 3],
+}
+
+impl Vertex {
+    pub fn vertex_attribute_array(location_pos: u32, location_col: u32) -> [wgpu::VertexAttribute; 2] {
+        vertex_attr_array![location_pos => Float32x3, location_col => Float32x3]
+    }
 }
 
 pub struct SolidColorCubeModel {
