@@ -82,7 +82,7 @@ impl VoxelSystem {
     }
 
     pub fn name_registry(&self) -> &NameRegistry {
-        &self.name_registry()
+        &self.name_registry
     }
 
     pub fn get_attribute_registry<A: Attribute>(&self) -> Option<Arc<AttributeRegistry<A>>> {
