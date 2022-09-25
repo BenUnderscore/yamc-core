@@ -14,12 +14,11 @@ impl RenderSurface {
         surface: wgpu::Surface,
         size_x: u32,
         size_y: u32,
+        format: wgpu::TextureFormat,
     ) -> RenderSurface {
-        let surface_format = wgpu::TextureFormat::Bgra8Unorm;
-
         let ctx = RenderSurface {
             surface,
-            surface_format,
+            surface_format: format,
             size_x,
             size_y,
         };

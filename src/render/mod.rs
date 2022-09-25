@@ -2,7 +2,7 @@
 use crate::event_loop::EventLoopProxy;
 use crate::res::ResourceSystem;
 use crate::world::voxel::VoxelSystem;
-use cgmath::{Euler, Matrix4, Vector3};
+use cgmath::{Euler, Matrix4, Vector3, One, Zero};
 use pollster::block_on;
 use surface::RenderSurface;
 use voxel::VoxelRenderSystem;
@@ -17,6 +17,16 @@ pub struct Camera {
     pub position: Vector3<f32>,
     pub orientation: Euler<f32>,
     pub projection_matrix: Matrix4<f32>,
+}
+
+impl Camera {
+    pub fn identity() -> Camera {
+        Camera {
+            position: Vector3::new(0.0, 0.0, 0.0),
+            orientation: Euler::new(0.0, 0.0, 0.0),
+            projection_matrix: Matrix4::one(),
+        }
+    }
 }
 
 pub struct RenderSystem {
@@ -60,6 +70,7 @@ impl RenderSystem {
             surface,
             window_inner_size.width,
             window_inner_size.height,
+            surface_format
         );
 
         let voxel_system = voxel::VoxelRenderSystem::new(

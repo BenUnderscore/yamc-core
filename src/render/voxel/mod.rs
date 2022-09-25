@@ -93,7 +93,7 @@ impl VoxelRenderSystem {
         });
 
         {
-            let render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut render_pass = command_encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Voxel rendering"),
                 color_attachments: &[wgpu::RenderPassColorAttachment {
                     view: &color_buf,
@@ -106,8 +106,10 @@ impl VoxelRenderSystem {
                 depth_stencil_attachment: None,
             });
 
+            render_pass.set_pipeline(&self.pipeline);
             for (coords, chunk_data) in self.chunks.iter() {
-                debug!("{:?}", coords);
+                render_pass.set_vertex_buffer(0, chunk_data.buffer.slice(..));
+                render_pass.draw(0..chunk_data.vertex_count as u32, 0..1);
             }
         }
 
